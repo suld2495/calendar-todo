@@ -1,0 +1,58 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["referentialIntegrity"]
+}
+
+datasource db {
+  provider             = "mysql"
+  url                  = env("DATABASE_URL")
+  referentialIntegrity = "prisma"
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String // "oauth" | "email" | "credentials"
+  provider          String // "github" | "kakao"
+  providerAccountId String // 유저 정보
+  refreshToken      String? @db.Text
+  accessToken       String? @db.Text
+  expires_at        Int?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  userId        String?   @unique
+  emailVerified DateTime? @map(name: "email_verified")
+  password      String?
+  image         String?
+  createdAt     DateTime  @default(now()) @map(name: "created_at")
+  updatedAt     DateTime  @updatedAt @map(name: "updated_at")
+  Session       Session[]
+  Account       Account[]
+}
+
+model Todo {
+  todoId    Int       @id @default(autoincrement())
+  title     String
+  contents  String
+  type      Int       @default(0)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime?
+}
